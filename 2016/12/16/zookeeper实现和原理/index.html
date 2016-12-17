@@ -99,10 +99,10 @@
 <meta property="og:site_name" content="Find Coder">
 <meta property="og:description" content="分布式应用管理技术">
 <meta property="og:image" content="http://zhaxiancheng.com/2016/12/16/zookeeper实现和原理/1.png">
-<meta property="og:image" content="http://zhaxiancheng.com/2016/12/16/zookeeper实现和原理/1.png">
+<meta property="og:image" content="http://zhaxiancheng.com/2016/12/16/zookeeper实现和原理/2.png">
 <meta property="og:image" content="http://zhaxiancheng.com/2016/12/16/zookeeper实现和原理/3.png">
 <meta property="og:image" content="http://zhaxiancheng.com/2016/12/16/zookeeper实现和原理/4.png">
-<meta property="og:updated_time" content="2016-12-16T09:37:36.825Z">
+<meta property="og:updated_time" content="2016-12-17T08:38:36.410Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="zookeeper实现和原理">
 <meta name="twitter:description" content="分布式应用管理技术">
@@ -385,13 +385,53 @@ body
 
 }
 
+table td {
+  height: 35px; /*统一每一行的默认高度*/
+  border: 1px solid #dedede; /*内部边框样式*/
+  padding: 0 10px; /*内边距*/
+}
+
+
+table th {
+    font-weight: bold; /*加粗*/
+    text-align: center !important; /*内容居中，加上 !important 避免被 Markdown 样式覆盖*/
+    background: rgba(158,188,226,0.2); /*背景色*/
+}
+
+
  </style>       
 
 
-<h3 id="Zookeeper介绍"><a href="#Zookeeper介绍" class="headerlink" title="Zookeeper介绍"></a>Zookeeper介绍</h3><p>ZooKeeper是一个分布式的，开放源码的分布式应用程序协调服务，是Google的Chubby一个开源的实现，是Hadoop和Hbase的重要组件。它是一个为分布式应用提供一致性服务的软件，提供的功能包括：资源配置管理、集群管理、统一命名服务、分布式同步、分布队列管理等。ZooKeeper的目标就是封装好复杂易出错的关键服务，将简单易用的接口和性能高效、功能稳定的系统提供给用户。ZooKeeper包含一个简单的原语集，提供Java和C的接口ZooKeeper代码版本中，提供了分布式独享锁、选举、队列的接口，代码在zookeeper-3.4.3\src\recipes。其中分布锁和队列有Java和C两个版本，选举只有Java版本。ZooKeeper是以Fast Paxos算法为基础的。Zookeeper的动机就是缓解分布式应用从头开始实现分布式协调服务的责任</p>
-<h3 id="Zookeeper服务端安装"><a href="#Zookeeper服务端安装" class="headerlink" title="Zookeeper服务端安装"></a>Zookeeper服务端安装</h3><h4 id="单机安装："><a href="#单机安装：" class="headerlink" title="单机安装："></a>单机安装：</h4><p>1.<br>先下载安装包：<a href="http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz" target="_blank" rel="external">http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz</a><br>官方下载地址：<a href="http://zookeeper.apache.org/releases.html" target="_blank" rel="external">http://zookeeper.apache.org/releases.html</a><br>2.<br>安装后进行解压，目录如下：<br><img src="/2016/12/16/zookeeper实现和原理/1.png" alt="1.png" title=""><br>3.<br>进入conf/目录，将zoo.sample.cfg文件修改成zoo.cfg,配置如下内容：<br><img src="/2016/12/16/zookeeper实现和原理/1.png" alt="1.png" title=""><br>tickTime : 心跳时间，单位是毫秒<br>dataDir：保存内存数据库快照信息的位置<br>dataLogDir：日志目录，如果不添加该参数，zookeeper默认该配置与dataDir是相同目录<br>clientPort：监听客户端连接的端口(服务端开启的端口)<br>4.<br>启动服务端<br>启动：./zkServer.sh start<br>检测：./zkServer.sh status 如果检测后发现还是没有启动成功，可以在bin目录下查看 zookeeper.out日志文件查看启动错误信息。<br>停止：./zkServer.sh stop<br>重启：./zkServer.sh restart<br>5.<br>启动客户端：./zkCli.sh -server localhost:2181<br>6.<br>进入客户端命令行<br>执行help命令获取所有客户端命令列表<br><img src="/2016/12/16/zookeeper实现和原理/3.png" alt="3.png" title=""><br>eg : ls /   展示所有node<br>eg：set /key value 在zookeeper根节点下创建key节点，存储的值为value</p>
-<h4 id="伪集群安装："><a href="#伪集群安装：" class="headerlink" title="伪集群安装："></a>伪集群安装：</h4><p>就是在一台物理机上安装多个zookeeper服务实例。步骤1,2同上。<br>3.<br>将解压后的zookeeper-3.4.6 分别拷贝3份在当前目录下：zookeeper_01、zookeeper_02、zookeeper_03<br>4.<br>进入zookeeper_01/conf/目录，将zoo.sample.cfg文件修改成zoo.cfg,配置如下内容：<br><img src="/2016/12/16/zookeeper实现和原理/4.png" alt="4.png" title=""><br>initLimit：zookeeper集群模式下，只有一台server节点是leader，其余server节点是follower。initLimit就是初始化连接时leader和follower之间的最长心跳时间为5个单位(5 <em> tickTime)。<br>syncLimit：集群模式下，leader和follower之间发送消息，请求和应答的最大时间为2个单位(2 </em> tickTime)。<br>server.{X} = {ip}:{port1}:{port2}  集群模式下，X是个数字，与配置的myid中的数字相同，表示是第几号server, ip是该server的ip，port1是该server和集群中的leader交换信息时使用的端口号，port2是该如果需要进行选举leader时，需要占用的端口号。其中clientPort参数在每个节点的zoo.cfg文件配置不同，需要更改每个节点的端口，以免发生冲突。<br>5.<br>在目录dataDir中新建一个myid文件，写上数字，就是4步骤中X的值。是这台server对应的编号。<br>6.<br>依次启动zookeeper集群中各节点 ./zkServer start。通过命令ps -ef|grep zookeeper 命令查看是否启动成功3个zookeeper节点，如果出现异常，查看bin目录下zookeeper.out错误日志文件内容排查问题。<br>7.<br>进行客户端进行连接 ./zkCli -server localhost:2181   ./zkCli -server localhost:2182  ./zkCli -server localhost:2183  进行相关节点操作。  </p>
-<h4 id="集群安装："><a href="#集群安装：" class="headerlink" title="集群安装："></a>集群安装：</h4><p>就是在不同物理机上安装多个zookeeper服务实例，与伪集群安装相类似，只是每个节点的zoo.cfg文件内容配置参数基本相同。</p>
+<h3 id="Zookeeper介绍"><a href="#Zookeeper介绍" class="headerlink" title="Zookeeper介绍"></a>Zookeeper介绍</h3><p>ZooKeeper是一个开源的分布式应用程序协调服务框架，是Google的Chubby一个开源的实现，是Hadoop和Hbase的重要组件。它是一个为分布式应用提供一致性服务的软件，提供的功能包括：资源配置管理、集群管理、统一命名服务、分布式同步、分布队列管理等。ZooKeeper的目标就是封装好复杂易出错的关键服务，将简单易用的接口和性能高效、功能稳定的系统提供给用户。ZooKeeper源码项目中包含一个简单的原语集，提供有Java和C版本的分布式独享锁、选举、队列等功能接口，代码在zookeeper-XXX\src\recipes目录中。<a href="https://github.com/apache/zookeeper" target="_blank" rel="external">Github源码</a></p>
+<h3 id="Zookeeper服务端安装"><a href="#Zookeeper服务端安装" class="headerlink" title="Zookeeper服务端安装"></a>Zookeeper服务端安装</h3><h4 id="单机安装："><a href="#单机安装：" class="headerlink" title="单机安装："></a>单机安装：</h4><p>1.<br>先下载安装包：<a href="http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz" target="_blank" rel="external">http://mirror.bit.edu.cn/apache/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz</a><br>官方下载地址：<a href="http://zookeeper.apache.org/releases.html" target="_blank" rel="external">http://zookeeper.apache.org/releases.html</a><br>2.<br>安装后进行解压，目录如下：<br><img src="/2016/12/16/zookeeper实现和原理/1.png" alt="1.png" title=""><br>3.<br>进入conf/目录，将zoo.sample.cfg文件修改成zoo.cfg,配置如下内容：<br><img src="/2016/12/16/zookeeper实现和原理/2.png" alt="2.png" title=""><br>tickTime : 心跳时间，单位是毫秒<br>dataDir：保存内存数据库快照信息的位置<br>dataLogDir：日志目录，如果不添加该参数，zookeeper默认该配置与dataDir是相同目录<br>clientPort：监听客户端连接的端口(服务端开启的端口)<br>4.<br>启动服务端<br>启动：./zkServer.sh start<br>检测：./zkServer.sh status 如果检测后发现还是没有启动成功，可以在bin目录下查看 zookeeper.out日志文件查看启动错误信息。<br>停止：./zkServer.sh stop<br>重启：./zkServer.sh restart<br>5.<br>启动客户端：./zkCli.sh -server localhost:2181<br>6.<br>进入客户端命令行模式<br>执行help命令获取所有客户端命令列表<br><img src="/2016/12/16/zookeeper实现和原理/3.png" alt="3.png" title=""><br>eg : ls /   展示所有node<br>eg：set /key value 在zookeeper根节点下创建key节点，存储的值为value</p>
+<h4 id="伪集群安装："><a href="#伪集群安装：" class="headerlink" title="伪集群安装："></a>伪集群安装：</h4><p>就是在一台物理机上安装多个zookeeper服务实例。步骤1,2同上。<br>3.<br>将解压后的zookeeper-3.4.6 分别拷贝3份在当前目录下：zookeeper_01、zookeeper_02、zookeeper_03<br>4.<br>进入zookeeper_01/conf/目录，将zoo.sample.cfg文件修改成zoo.cfg,配置如下内容(zookeeper_02和zookeeper_03节点执行相同操作)：<br><img src="/2016/12/16/zookeeper实现和原理/4.png" alt="4.png" title=""><br>initLimit:集群模式下，在初始化阶段时leader和follower之间通信的时间不能超过initLimit*tickTime。<br>syncLimit:集群模式下，在请求阶段时leader和follower之间通信的时间不能超过syncLimit*tickTime。<br>server.{X} = {ip}:{port1}:{port2}  集群模式下，X是个数字，与配置的myid中的数字相同，表示是第几编号server, ip是该server的ip，port1是该server和集群中的leader交换信息时使用的端口号，port2是该如果需要进行选举leader时，需要占用的端口号。因为是伪集群模式，clientPort参数在每个节点的zoo.cfg文件中配置不同，以免发生端口冲突。<br>5.<br>在目录dataDir中新建一个myid文件，写上数字，就是4步骤中X的值。是这台server对应的编号。<br>6.<br>依次启动zookeeper集群中各节点 ./zkServer start。通过命令ps -ef|grep zookeeper 命令查看是否启动成功3个zookeeper节点，如果出现异常，查看bin目录下zookeeper.out错误日志文件内容排查问题。<br>7.<br>进行客户端进行连接 ./zkCli -server localhost:2181   ./zkCli -server localhost:2182  ./zkCli -server localhost:2183  进行相关节点操作。  </p>
+<h4 id="集群安装："><a href="#集群安装：" class="headerlink" title="集群安装："></a>集群安装：</h4><p>就是在不同物理机上安装多个zookeeper服务实例，与伪集群安装相类似，每个节点的zoo.cfg文件内容配置参数基本相同,其中server的ip和port配置要与按照实际物理部署的ip和port一致即可，可自行配置。</p>
+<h3 id="Zookeeper工作原理"><a href="#Zookeeper工作原理" class="headerlink" title="Zookeeper工作原理"></a>Zookeeper工作原理</h3><h4 id="角色"><a href="#角色" class="headerlink" title="角色"></a>角色</h4><table>
+<thead>
+<tr>
+<th style="text-align:center">角色</th>
+<th style="text-align:left">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Leader</td>
+<td style="text-align:left">负责事物请求的proposal与commit <br>负责集群的系统状态更新</td>
+</tr>
+<tr>
+<td style="text-align:center">Follwer</td>
+<td style="text-align:left">负责非事物请求和处理，转发事物请求给leader <br>参与事物请求的proposal的投票<br>参与leader选举投票</td>
+</tr>
+<tr>
+<td style="text-align:center">Observer</td>
+<td style="text-align:left">负责非事物请求和处理，转发事物请求给leader (3.3.0版本新角色，通常用于在不影响集群事物处理能力的前提下提高集群的非事物梳理能力)</td>
+</tr>
+<tr>
+<td style="text-align:center">Client</td>
+<td style="text-align:left">发起请求</td>
+</tr>
+</tbody>
+</table>
 <a id="more"></a>
       
     </div>
@@ -546,7 +586,7 @@ body
           
             <div class="site-state-item site-state-tags">
               <a href="/tags">
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">标签</span>
               </a>
             </div>
@@ -564,53 +604,6 @@ body
         
 
         <div class="links-of-author motion-element">
-          
-            
-              <span class="links-of-author-item">
-                <a href="https://github.com/" target="_blank" title="GitHub">
-                  
-                    <i class="fa fa-fw fa-github"></i>
-                  
-                  GitHub
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="https://twitter.com/" target="_blank" title="Twitter">
-                  
-                    <i class="fa fa-fw fa-twitter"></i>
-                  
-                  Twitter
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="http://weibo.com/" target="_blank" title="微博">
-                  
-                    <i class="fa fa-fw fa-globe"></i>
-                  
-                  微博
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="http://www.zhihu.com" target="_blank" title="知乎">
-                  
-                    <i class="fa fa-fw fa-globe"></i>
-                  
-                  知乎
-                </a>
-              </span>
-            
-              <span class="links-of-author-item">
-                <a href="http://www.zhibo8.cc/" target="_blank" title="直播吧">
-                  
-                    <i class="fa fa-fw fa-globe"></i>
-                  
-                  直播吧
-                </a>
-              </span>
-            
           
         </div>
 
@@ -693,7 +686,7 @@ body
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Zookeeper介绍"><span class="nav-number">1.</span> <span class="nav-text">Zookeeper介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Zookeeper服务端安装"><span class="nav-number">2.</span> <span class="nav-text">Zookeeper服务端安装</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单机安装："><span class="nav-number">2.1.</span> <span class="nav-text">单机安装：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#伪集群安装："><span class="nav-number">2.2.</span> <span class="nav-text">伪集群安装：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#集群安装："><span class="nav-number">2.3.</span> <span class="nav-text">集群安装：</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Zookeeper介绍"><span class="nav-number">1.</span> <span class="nav-text">Zookeeper介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Zookeeper服务端安装"><span class="nav-number">2.</span> <span class="nav-text">Zookeeper服务端安装</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单机安装："><span class="nav-number">2.1.</span> <span class="nav-text">单机安装：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#伪集群安装："><span class="nav-number">2.2.</span> <span class="nav-text">伪集群安装：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#集群安装："><span class="nav-number">2.3.</span> <span class="nav-text">集群安装：</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Zookeeper工作原理"><span class="nav-number">3.</span> <span class="nav-text">Zookeeper工作原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#角色"><span class="nav-number">3.1.</span> <span class="nav-text">角色</span></a></li></ol></li></ol></div>
             
 
           </div>
